@@ -1,7 +1,5 @@
-module.exports = (api) => {
-    api.cache(false)
-
-    return {
-        presets: ["@babel/preset-env", "@babel/preset-react"]
-    }
+const config = {
+    presets: ["@babel/preset-env", "@babel/preset-react"]
 }
+
+export default config

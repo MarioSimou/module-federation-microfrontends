@@ -1,13 +1,16 @@
-const path = require('path')
-const {cwd} = require('process')
-const HTMLWebpackPlugin = require('html-webpack-plugin')
-const webpack = require('webpack')
+import path from 'path'
+import {cwd} from 'process'
+import HTMLWebpackPlugin  from 'html-webpack-plugin'
+import webpack from 'webpack'
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+const packageJSON = require('./package.json')
 
 const { ModuleFederationPlugin } = webpack.container
 
 const getPath = (...args) => path.join(cwd(), ...args)
 
-module.exports = {
+const config = {
     entry: getPath('src', 'index.js'),
     output: {
         filename: "[name].js",
@@ -32,29 +35,43 @@ module.exports = {
             template: './public/index.html'
         }),
         new ModuleFederationPlugin({
+            name: 'products',
+            filename: 'components.js',
             remotes: {
-                home: 'home@http://localhost:3000/federated.js'
+                footer: 'footer@http://localhost:3000/footer.js',
+                header: 'header@http://localhost:3000/header.js',
+            },            
+            exposes: {
+                './components/ProductCard': './src/components/ProductCard.jsx',
             },
-            shared: {
+            shared:{
                 "react": {
-                    requiredVersion: "^17.0.2",
+                    requiredVersion: packageJSON.dependencies.react,
+                    singleton: true
                 },
                 "react-dom": {
-                    requiredVersion: "^17.0.2",
+                    requiredVersion: packageJSON.dependencies['react-dom'],
+                    singleton: true
                 },
                 "@chakra-ui/react": {
-                    requiredVersion: "^1.6.12"
+                    requiredVersion: packageJSON.dependencies['@chakra-ui/react'],
+                    singleton: true,
                 },
                 "@emotion/react": {
-                    requiredVersion: "^11.5.0"
+                    requiredVersion: packageJSON.dependencies['@emotion/react'],
+                    singleton: true
                 },
                 "emotion/styled": {
-                    requiredVersion: "^11.3.0"
+                    requiredVersion: packageJSON.dependencies['@emotion/styled'],
+                    singleton: true
                 },
                 "framer-motion": {
-                    requiredVersion: "^4.1.17"
+                    requiredVersion: packageJSON.dependencies['framer-motion'],
+                    singleton: true
                 }
             }
         })
     ]
 }
+
+export default config

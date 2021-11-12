@@ -2,6 +2,10 @@ import path from 'path'
 import { cwd } from 'process'
 import HTMLWebpackPlugin from 'html-webpack-plugin' 
 import webpack from 'webpack'
+import { createRequire } from 'module'
+import TSConfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
+const require = createRequire(import.meta.url)
+const packageJSON = require('./package.json')
 
 const { ModuleFederationPlugin } = webpack.container
 
@@ -17,52 +21,126 @@ const config = {
         rules: [
             {
                 test: /\.tsx?$/,
-                use: 'ts-loader'
-            }
+                loader: 'babel-loader',
+                exclude: /node_modules/,
+                options: {
+                    presets: ["@babel/preset-react", "@babel/preset-typescript"]
+                }
+            },
         ]
     },
     devServer: {
         port: 3000,
     },
     resolve: {
-        extensions: [".ts", ".tsx", ".js", ".json"]
+        extensions: [".ts", ".tsx", ".js", ".json"],
+        plugins: [
+            new TSConfigPathsPlugin({
+                configFile: 'tsconfig.json',
+                extensions: ['.ts','.tsx']
+            })
+        ]
     },
     plugins: [
         new ModuleFederationPlugin({
-            name: 'home',
-            filename: 'federated.js',
-            library: {
-                type: "var",
-                name: "home"
-            },
+            name: 'footer',
+            filename: 'footer.js',
             exposes: {
-                './Header': './src/components/shared/Header',
-                './Footer': './src/components/shared/Footer'
+                './Footer': './src/components/shared/Footer.tsx'
             },
             shared: {
                 "react": {
-                    requiredVersion: "^17.0.2",
-                    // eager: true,
-                    // singleton: true
+                    requiredVersion: packageJSON.dependencies.react,
+                    singleton: true
                 },
                 "react-dom": {
-                    requiredVersion: "^17.0.2",
-                    // eager: true,
-                    // singleton: true,
+                    requiredVersion: packageJSON.dependencies['react-dom'],
+                    singleton: true
                 },
                 "@chakra-ui/react": {
-                    requiredVersion: "^1.6.12"
+                    requiredVersion: packageJSON.dependencies['@chakra-ui/react'],
+                    singleton: true,
                 },
                 "@emotion/react": {
-                    requiredVersion: "^11.5.0"
+                    requiredVersion: packageJSON.dependencies['@emotion/react'],
+                    singleton: true
                 },
                 "emotion/styled": {
-                    requiredVersion: "^11.3.0"
+                    requiredVersion: packageJSON.dependencies['@emotion/styled'],
+                    singleton: true
                 },
                 "framer-motion": {
-                    requiredVersion: "^4.1.17"
+                    requiredVersion: packageJSON.dependencies['framer-motion'],
+                    singleton: true
                 }
-            }
+            },
+        }),
+        new ModuleFederationPlugin({
+            name: 'header',
+            filename: 'header.js',
+            exposes: {
+                './Header': './src/components/shared/Header.tsx'
+            },
+            shared: {
+                                "react": {
+                    requiredVersion: packageJSON.dependencies.react,
+                    singleton: true
+                },
+                "react-dom": {
+                    requiredVersion: packageJSON.dependencies['react-dom'],
+                    singleton: true
+                },
+                "@chakra-ui/react": {
+                    requiredVersion: packageJSON.dependencies['@chakra-ui/react'],
+                    singleton: true,
+                },
+                "@emotion/react": {
+                    requiredVersion: packageJSON.dependencies['@emotion/react'],
+                    singleton: true
+                },
+                "emotion/styled": {
+                    requiredVersion: packageJSON.dependencies['@emotion/styled'],
+                    singleton: true
+                },
+                "framer-motion": {
+                    requiredVersion: packageJSON.dependencies['framer-motion'],
+                    singleton: true
+                }
+            },
+        }),
+        new ModuleFederationPlugin({
+            remotes: {
+                product: 'product@http://localhost:3002/_next/static/chunks/remoteEntry.js',
+                products: 'products@http://localhost:3001/components.js',
+                footer: 'footer@http://localhost:3000/footer.js',
+                header: 'header@http://localhost:3000/header.js',
+            },
+            shared: {
+                "react": {
+                    requiredVersion: packageJSON.dependencies.react,
+                    singleton: true
+                },
+                "react-dom": {
+                    requiredVersion: packageJSON.dependencies['react-dom'],
+                    singleton: true
+                },
+                "@chakra-ui/react": {
+                    requiredVersion: packageJSON.dependencies['@chakra-ui/react'],
+                    singleton: true,
+                },
+                "@emotion/react": {
+                    requiredVersion: packageJSON.dependencies['@emotion/react'],
+                    singleton: true
+                },
+                "emotion/styled": {
+                    requiredVersion: packageJSON.dependencies['@emotion/styled'],
+                    singleton: true
+                },
+                "framer-motion": {
+                    requiredVersion: packageJSON.dependencies['framer-motion'],
+                    singleton: true
+                }
+            },
         }),
         new HTMLWebpackPlugin({
             template: './public/index.html'
